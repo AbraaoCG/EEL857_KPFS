@@ -1,3 +1,5 @@
 /instances
 /.vscode
 /test*.cpp
+/*.exe
+/output
