@@ -15,6 +15,16 @@ struct Item {
     Item(int _id, int p, int l , bool sol=false): id(_id), peso(p), profit(l), solv(sol) {}
 };
 
+struct ConjuntoPenalidade{
+    int id;
+    int limiteItens; //Limite de itens que podem ser escolhidos deste conjunto sem penalidade.
+    int penalidade; //Valor da penalidade associada a este conjunto
+    int cardinalidade; //Cardinalidade do conjunto de penalidade
+    vector<int> itens; //IDs dos itens que pertencem a este conjunto de penalidade
+
+    ConjuntoPenalidade(int _id, int _limiteItens, int _penalidade, int _cardinalidade, vector<int> _itens): id(_id), limiteItens(_limiteItens), penalidade(_penalidade), cardinalidade(_cardinalidade), itens(_itens) {}
+};
+
 //TODO criar a estrutura dos conjuntos de penalidade (nP)
 
 int main(){
@@ -22,7 +32,7 @@ int main(){
     int nP = 0; //número de conjuntos de penalidade
     int kS = 0; //Capacidade de mochila
     vector<Item> items;
-    string filepath, cenario, sc, tipo;
+    string filepath, cenario, sc, tipo, tamanho, caso;
     pair<string, string> par_string;
     fstream newfile;
 
@@ -58,8 +68,29 @@ int main(){
     }
     
     // TODO: Implementar a escolha do tamanho(300 até 1000) e do arquivo txt
+    cout << "Escolha o tamanho do problema em número de itens:" << endl;
+    cout << "1: 300" << endl;
+    cout << "2: 500" << endl;
+    cout << "3: 700" << endl;
+    cout << "4: 800" << endl;
+    cout << "5: 1000" << endl;
+    cin >> tamanho;
 
-    filepath = "instances\\" + cenario + "\\" + tipo + sc + "\\300\\kpfs_1.txt";
+    tamanho = get_tamanho(tamanho);
+    if (tamanho == "erro") {
+        cerr << "Erro: Informe valores entre 1 e 5!";
+        return 1;
+    }
+
+    cout << "Escolha o caso desejado de 1 a 10:" << endl;
+    cin >> caso;
+    
+    #ifdef _WIN32
+        filepath = "instances\\" + cenario + "\\" + tipo + sc + "\\"+ tamanho+"\\kpfs_"+caso+".txt";
+    #else
+        filepath = "instances/" + cenario + "/" + tipo + sc + "/"+tamanho+"/kpfs_"+caso+".txt";
+    #endif
+    
     cout << filepath << endl;
 
     newfile.open(filepath, ios_base::in);
@@ -88,6 +119,9 @@ int main(){
         }
 
         //TODO: Implementar lógica para ler e processar dados dos conjuntos de penalidade (nP)
+        
+
+
 
         newfile.close(); // Fecha o arquivo após terminar de usá-lo
         cout << "Arquivo fechado." << endl;
@@ -99,6 +133,8 @@ int main(){
     cout << nI << endl;
     cout << nP << endl;
     cout << kS << endl;
+
+    // Checar se os itens foram lidos corretamente.
     for(const auto& item : items) {
         std::cout << "ID: " << item.id << ", Peso: " << item.peso << ", Profit: " << item.profit << std::endl;
     }
