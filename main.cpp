@@ -1,4 +1,5 @@
 #include "algorithms/grasp.cpp"
+#include "algorithms/TS.cpp"
 #include <iostream>
 
 int main(int argc, char* argv[]) {
@@ -7,7 +8,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string algoritmo = "grasp";
+    std::string algoritmo = "tabu";
     std::string caminho = argv[1];
     try {
         Instance inst = lerInstancia(caminho);
@@ -17,7 +18,7 @@ int main(int argc, char* argv[]) {
         if (algoritmo == "grasp") res = grasp(inst);
         // else if (algoritmo == "ils") res = ils(inst);
         // else if (algoritmo == "vns") res = vns(inst);
-        // else if (algoritmo == "tabu") res = tabuSearch(inst);
+        else if (algoritmo == "tabu") res = tabu_search(inst);
         // else if (algoritmo == "genetic") res = genetic(inst);
         // else if (algoritmo == "sa") res = simulatedAnnealing(inst);
         else {
