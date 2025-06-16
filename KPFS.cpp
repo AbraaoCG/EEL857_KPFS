@@ -18,6 +18,16 @@ struct Item {
     Item(int _id, int p, int l ): id(_id), peso(p), profit(l) {}
 };
 
+struct ConjuntoPenalidade{
+    int id;
+    int limiteItens; //Limite de itens que podem ser escolhidos deste conjunto sem penalidade.
+    int penalidade; //Valor da penalidade associada a este conjunto
+    int cardinalidade; //Cardinalidade do conjunto de penalidade
+    vector<int> itens; //IDs dos itens que pertencem a este conjunto de penalidade
+
+    ConjuntoPenalidade(int _id, int _limiteItens, int _penalidade, int _cardinalidade, vector<int> _itens): id(_id), limiteItens(_limiteItens), penalidade(_penalidade), cardinalidade(_cardinalidade), itens(_itens) {}
+};
+
 //TODO criar a estrutura dos conjuntos de penalidade (nP)
 struct ForfeitSet {
     int allowance;    // nA_i do readme, h_i do PDF
@@ -289,7 +299,7 @@ int main(){
     int k_global = 1000;
     vector<Item> items;
     vector<ForfeitSet> forfeit_sets;
-    string filepath, cenario, sc, tipo;
+    string filepath, cenario, sc, tipo, tamanho, caso;
     pair<string, string> par_string;
     fstream newfile;
 
@@ -325,8 +335,29 @@ int main(){
     }
     
     // TODO: Implementar a escolha do tamanho(300 até 1000) e do arquivo txt
+    cout << "Escolha o tamanho do problema em número de itens:" << endl;
+    cout << "1: 300" << endl;
+    cout << "2: 500" << endl;
+    cout << "3: 700" << endl;
+    cout << "4: 800" << endl;
+    cout << "5: 1000" << endl;
+    cin >> tamanho;
 
-    filepath = "instances\\" + cenario + "\\" + tipo + sc + "\\300\\kpfs_1.txt";
+    tamanho = get_tamanho(tamanho);
+    if (tamanho == "erro") {
+        cerr << "Erro: Informe valores entre 1 e 5!";
+        return 1;
+    }
+
+    cout << "Escolha o caso desejado de 1 a 10:" << endl;
+    cin >> caso;
+    
+    #ifdef _WIN32
+        filepath = "instances\\" + cenario + "\\" + tipo + sc + "\\"+ tamanho+"\\kpfs_"+caso+".txt";
+    #else
+        filepath = "instances/" + cenario + "/" + tipo + sc + "/"+tamanho+"/kpfs_"+caso+".txt";
+    #endif
+    
     cout << filepath << endl;
 
     newfile.open(filepath, ios_base::in);
@@ -403,16 +434,15 @@ int main(){
 
     // int max_iterations = 1000;
     // int tabu_tenure = 7; 
-    // Execução
+    // // Execução
     // tabu_search(items, forfeit_sets, kS, k_global, max_iterations, tabu_tenure);
 
 
-    int population_size = 50;
-    int max_generations = 100;
-    double crossover_rate = 0.8;
-    double mutation_rate = 0.05;
-
-    genetic_algorithm(items, forfeit_sets, kS, k_global, population_size, max_generations, crossover_rate, mutation_rate);
+    // int population_size = 50;
+    // int max_generations = 100;
+    // double crossover_rate = 0.8;
+    // double mutation_rate = 0.05;
+    // genetic_algorithm(items, forfeit_sets, kS, k_global, population_size, max_generations, crossover_rate, mutation_rate);
 
     return 0;
 }

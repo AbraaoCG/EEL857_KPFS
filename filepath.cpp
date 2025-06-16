@@ -27,3 +27,19 @@ std::string get_tipo(std::string tipo){
         return {"erro"};
     }
 }
+
+std::string get_tamanho(std::string tamanho) {
+    if (tamanho == "1") {
+        return "300";
+    } else if (tamanho == "2") {
+        return "500";
+    } else if (tamanho == "3") {
+        return "700";
+    } else if (tamanho == "4") {
+        return "800";
+    } else if (tamanho == "5") {
+        return "1000";
+    } else {
+        return "erro"; // or any other appropriate error handling
+    }
+}
