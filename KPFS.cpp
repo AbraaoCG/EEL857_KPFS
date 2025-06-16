@@ -155,6 +155,132 @@ void tabu_search(const vector<Item>& items,
     cout << "Peso total: " << final_weight << "/" << knapsack_capacity << endl;
 }
 
+void genetic_algorithm(const vector<Item>& items,
+                       const vector<ForfeitSet>& forfeit_sets,
+                       int knapsack_capacity,
+                       int max_global_violations,
+                       int population_size,
+                       int max_generations,
+                       double crossover_rate,
+                       double mutation_rate) {
+    int n_items = items.size();
+    vector<vector<bool>> population(population_size, vector<bool>(n_items));
+    vector<double> fitness(population_size, DBL_MIN);
+
+    // Função auxiliar para gerar solução aleatória
+    auto random_solution = [&]() {
+        vector<bool> sol(n_items);
+        for (int i = 0; i < n_items; ++i) {
+            sol[i] = rand() % 2; // Gera 0 ou 1
+        }
+        return sol;
+    };
+
+    // 1. Inicializar população aleatoriamente
+    for (int i = 0; i < population_size; ++i) {
+        population[i] = random_solution();
+        fitness[i] = calculate_objective(population[i], items, forfeit_sets, knapsack_capacity, max_global_violations);
+    }
+
+    // 2. Loop principal do algoritmo genético
+    for (int generation = 0; generation < max_generations; ++generation) {
+        vector<vector<bool>> new_population;
+
+        // 2.1 Seleção por torneio (ajustada para evitar repetição no segundo pai)
+        auto tournament_selection = [&](const vector<bool>& exclude_parent) -> vector<bool> {
+            int idx1, idx2;
+            vector<bool> selected;
+
+            do {
+                idx1 = rand() % population_size;
+                idx2 = rand() % population_size;
+                selected = fitness[idx1] > fitness[idx2] ? population[idx1] : population[idx2];
+            } while (selected == exclude_parent);
+
+            return selected;
+        };
+
+        // 2.2 Reprodução
+        while (new_population.size() < population_size) {
+            vector<bool> parent1 = tournament_selection({});
+            vector<bool> parent2 = tournament_selection(parent1);
+
+            // Crossover com probabilidade definida
+            if ((double)rand() / RAND_MAX < crossover_rate) {
+                int crossover_point = rand() % n_items;
+                vector<bool> child1 = parent1, child2 = parent2;
+
+                for (int i = crossover_point; i < n_items; ++i) {
+                    swap(child1[i], child2[i]);
+                }
+
+                new_population.push_back(child1);
+                if (new_population.size() < population_size) {
+                    new_population.push_back(child2);
+                }
+            } else {
+                new_population.push_back(parent1);
+                if (new_population.size() < population_size) {
+                    new_population.push_back(parent2);
+                }
+            }
+        }
+
+        // 2.3 Mutação
+        for (auto& individual : new_population) {
+            if ((double)rand() / RAND_MAX < mutation_rate) {
+                int mutation_point = rand() % n_items;
+                individual[mutation_point] = !individual[mutation_point]; // Flip do bit
+            }
+        }
+
+        // 2.4 Avaliação da nova população
+        for (int i = 0; i < population_size; ++i) {
+            fitness[i] = calculate_objective(new_population[i], items, forfeit_sets, knapsack_capacity, max_global_violations);
+        }
+
+        // 2.5 Substituição da população antiga
+        population = new_population;
+
+        // 2.6 Encontrar melhor solução da geração atual
+        double generation_best_fitness = DBL_MIN;
+        vector<bool> generation_best_sol;
+        for (int i = 0; i < population_size; ++i) {
+            if (fitness[i] > generation_best_fitness) {
+                generation_best_fitness = fitness[i];
+                generation_best_sol = population[i];
+            }
+        }
+
+        cout << "Geração " << generation + 1 << ": Melhor Obj = " << generation_best_fitness << endl;
+    }
+
+    // Encontrar e imprimir a melhor solução geral
+    double best_fitness = DBL_MIN;
+    vector<bool> best_sol;
+    for (int i = 0; i < population_size; ++i) {
+        if (fitness[i] > best_fitness) {
+            best_fitness = fitness[i];
+            best_sol = population[i];
+        }
+    }
+
+    cout << "\n--- Algoritmo Genético Finalizado ---" << endl;
+    cout << "Melhor valor objetivo encontrado: " << best_fitness << endl;
+    cout << "Itens na solução final: ";
+    double final_weight = 0;
+    int items_count = 0;
+    for (size_t i = 0; i < best_sol.size(); ++i) {
+        if (best_sol[i]) {
+            cout << items[i].id << " ";
+            final_weight += items[i].peso;
+            items_count++;
+        }
+    }
+    cout << "\nNúmero de itens: " << items_count << endl;
+    cout << "Peso total: " << final_weight << "/" << knapsack_capacity << endl;
+}
+
 
 int main(){
     int nI = 0; //número de itens
@@ -274,12 +400,19 @@ int main(){
         }
         cout << " }" << endl;
     }*/
-    int max_iterations = 1000;
-    int tabu_tenure = 7; 
 
+    // int max_iterations = 1000;
+    // int tabu_tenure = 7; 
     // Execução
-    tabu_search(items, forfeit_sets, kS, k_global, max_iterations, tabu_tenure);
+    // tabu_search(items, forfeit_sets, kS, k_global, max_iterations, tabu_tenure);
 
+
+    int population_size = 50;
+    int max_generations = 100;
+    double crossover_rate = 0.8;
+    double mutation_rate = 0.05;
+
+    genetic_algorithm(items, forfeit_sets, kS, k_global, population_size, max_generations, crossover_rate, mutation_rate);
 
     return 0;
 }
