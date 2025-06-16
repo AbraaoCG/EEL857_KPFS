@@ -52,7 +52,6 @@ double calculate_objective(const vector<bool>& sol, const vector<Item>& items, c
     if (total_weight > knapsack_capacity) {
         return DBL_MIN; // Solução inviável
     }
-
     double total_penalty_cost = 0;
     int total_violations = 0;
 
@@ -165,6 +164,60 @@ void tabu_search(const vector<Item>& items,
     cout << "Peso total: " << final_weight << "/" << knapsack_capacity << endl;
 }
 
+// vector<bool> generate_random_solution(const vector<Item>& items, int knapsack_capacity) {
+//     vector<bool> solution(items.size(), false);
+//     vector<int> indices(items.size());
+
+//     // Preencher índices dos itens
+//     iota(indices.begin(), indices.end(), 0);
+
+//     // Embaralhar os índices para adicionar itens aleatoriamente
+//     random_shuffle(indices.begin(), indices.end());
+
+//     int current_weight = 0;
+
+//     for (int idx : indices) {
+//         // Adicionar item somente se não exceder o limite
+//         if (current_weight + items[idx].peso <= knapsack_capacity) {
+//             solution[idx] = true;
+//             current_weight += items[idx].peso;
+//         }
+//     }
+
+//     return solution;
+// }
+
+// vector<vector<bool>> initialize_population_random(const vector<Item>& items, int knapsack_capacity, int population_size) {
+//     vector<vector<bool>> population;
+//     population.reserve(population_size);
+
+//     for (int i = 0; i < population_size; ++i) {
+//         // Gerar uma solução inicial aleatória válida
+//         population.push_back(generate_random_solution(items, knapsack_capacity));
+//     }
+
+//     return population;
+// }
+vector<bool> roulette_wheel_selection(const vector<vector<bool>>& population, 
+                                      const vector<double>& fitness) {
+    // 1. Calcular o somatório de fitness
+    double total_fitness = accumulate(fitness.begin(), fitness.end(), 0.0);
+
+    // 2. Gerar um valor aleatório no intervalo [0, total_fitness)
+    double random_value = ((double)rand() / RAND_MAX) * total_fitness;
+
+    // 3. Percorrer a população acumulando fitness
+    double cumulative_sum = 0.0;
+    for (size_t i = 0; i < population.size(); ++i) {
+        cumulative_sum += fitness[i];
+        if (cumulative_sum >= random_value) {
+            return population[i];
+        }
+    }
+
+    // 4. Retornar o último indivíduo por segurança (nunca deve chegar aqui)
+    return population.back();
+}
 void genetic_algorithm(const vector<Item>& items,
                        const vector<ForfeitSet>& forfeit_sets,
                        int knapsack_capacity,
@@ -172,23 +225,18 @@ void genetic_algorithm(const vector<Item>& items,
                        int population_size,
                        int max_generations,
                        double crossover_rate,
-                       double mutation_rate) {
+                       double mutation_rate,
+                       bool track_evolution) {
     int n_items = items.size();
     vector<vector<bool>> population(population_size, vector<bool>(n_items));
     vector<double> fitness(population_size, DBL_MIN);
+    vector<int> generation_best_fitness_history(max_generations, DBL_MIN);
 
-    // Função auxiliar para gerar solução aleatória
-    auto random_solution = [&]() {
-        vector<bool> sol(n_items);
-        for (int i = 0; i < n_items; ++i) {
-            sol[i] = rand() % 2; // Gera 0 ou 1
+    // Inicializar população com soluções zeradas
+    for (int i = 0; i < population_size; ++i){
+        for (int j = 0; j < n_items; ++j){
+            population[i][j] = 0;
         }
-        return sol;
-    };
-
-    // 1. Inicializar população aleatoriamente
-    for (int i = 0; i < population_size; ++i) {
-        population[i] = random_solution();
         fitness[i] = calculate_objective(population[i], items, forfeit_sets, knapsack_capacity, max_global_violations);
     }
 
@@ -196,24 +244,10 @@ void genetic_algorithm(const vector<Item>& items,
     for (int generation = 0; generation < max_generations; ++generation) {
         vector<vector<bool>> new_population;
 
-        // 2.1 Seleção por torneio (ajustada para evitar repetição no segundo pai)
-        auto tournament_selection = [&](const vector<bool>& exclude_parent) -> vector<bool> {
-            int idx1, idx2;
-            vector<bool> selected;
-
-            do {
-                idx1 = rand() % population_size;
-                idx2 = rand() % population_size;
-                selected = fitness[idx1] > fitness[idx2] ? population[idx1] : population[idx2];
-            } while (selected == exclude_parent);
-
-            return selected;
-        };
-
         // 2.2 Reprodução
         while (new_population.size() < population_size) {
-            vector<bool> parent1 = tournament_selection({});
-            vector<bool> parent2 = tournament_selection(parent1);
+            vector<bool> parent1 = roulette_wheel_selection(population, fitness);
+            vector<bool> parent2 = roulette_wheel_selection(population, fitness);
 
             // Crossover com probabilidade definida
             if ((double)rand() / RAND_MAX < crossover_rate) {
@@ -223,7 +257,7 @@ void genetic_algorithm(const vector<Item>& items,
                 for (int i = crossover_point; i < n_items; ++i) {
                     swap(child1[i], child2[i]);
                 }
-
+                
                 new_population.push_back(child1);
                 if (new_population.size() < population_size) {
                     new_population.push_back(child2);
@@ -243,7 +277,6 @@ void genetic_algorithm(const vector<Item>& items,
                 individual[mutation_point] = !individual[mutation_point]; // Flip do bit
             }
         }
-
         // 2.4 Avaliação da nova população
         for (int i = 0; i < population_size; ++i) {
             fitness[i] = calculate_objective(new_population[i], items, forfeit_sets, knapsack_capacity, max_global_violations);
@@ -252,17 +285,18 @@ void genetic_algorithm(const vector<Item>& items,
         // 2.5 Substituição da população antiga
         population = new_population;
 
-        // 2.6 Encontrar melhor solução da geração atual
-        double generation_best_fitness = DBL_MIN;
-        vector<bool> generation_best_sol;
-        for (int i = 0; i < population_size; ++i) {
-            if (fitness[i] > generation_best_fitness) {
-                generation_best_fitness = fitness[i];
-                generation_best_sol = population[i];
+        if(track_evolution){
+            // 2.6 Encontrar melhor solução da geração atual
+            double generation_best_fitness = DBL_MIN;
+            vector<bool> generation_best_sol;
+            for (int i = 0; i < population_size; ++i) {
+                if (fitness[i] > generation_best_fitness) {
+                    generation_best_fitness = fitness[i];
+                    generation_best_sol = population[i];
+                }
             }
+            generation_best_fitness_history[generation] =  generation_best_fitness;
         }
-
-        cout << "Geração " << generation + 1 << ": Melhor Obj = " << generation_best_fitness << endl;
     }
 
     // Encontrar e imprimir a melhor solução geral
@@ -289,7 +323,29 @@ void genetic_algorithm(const vector<Item>& items,
     }
     cout << "\nNúmero de itens: " << items_count << endl;
     cout << "Peso total: " << final_weight << "/" << knapsack_capacity << endl;
+
+    // // TODO: Gráfico de evolução nas gerações a ser construído
+    // if(track_evolution){
+        
+    // }
 }
+
+    /*
+    for(const auto& item : items) {
+        std::cout << "ID: " << item.id << ", Peso: " << item.peso << ", Profit: " << item.profit << std::endl;
+    }
+
+   cout << "\n--- Conjuntos de Penalidade ---" << endl;
+    for(size_t i = 0; i < forfeit_sets.size(); ++i) {
+        cout << "Conjunto " << i << ": "
+             << "Permitidos (h): " << forfeit_sets[i].allowance << ", "
+             << "Custo (d): " << forfeit_sets[i].penalty_cost << ", "
+             << "Itens: { ";
+        for(size_t j = 0; j < forfeit_sets[i].items.size(); ++j) {
+            cout << forfeit_sets[i].items[j] << (j == forfeit_sets[i].items.size() - 1 ? "" : ", ");
+        }
+        cout << " }" << endl;
+    }*/
 
 
 int main(){
@@ -297,65 +353,85 @@ int main(){
     int nP = 0; //número de conjuntos de penalidade
     int kS = 0; //Capacidade de mochila
     int k_global = 1000;
+    bool case_select_mode = 1;
     vector<Item> items;
     vector<ForfeitSet> forfeit_sets;
     string filepath, cenario, sc, tipo, tamanho, caso;
     pair<string, string> par_string;
     fstream newfile;
 
+    // Modo de seleção manual
+    if (case_select_mode == 0) { 
+        //Escolha do cenário
+        cout << "Escolha o cenário:" << endl;
+        cout << "1: scenario1" << endl;
+        cout << "2: scenario2" << endl;
+        cout << "3: scenario3" << endl;
+        cout << "4: scenario4" << endl;
+        cin >> cenario;
 
-    //Escolha do cenário
-    cout << "Escolha o cenário:" << endl;
-    cout << "1: scenario1" << endl;
-    cout << "2: scenario2" << endl;
-    cout << "3: scenario3" << endl;
-    cout << "4: scenario4" << endl;
-    cin >> cenario;
+        par_string = get_cenario(cenario, sc);
+        cenario = par_string.first;
+        
+        if (cenario == "erro") {
+            cerr << "Erro: Informe valores entre 1 e 4!";
+            return 1;
+        }
+        sc = par_string.second;
 
-    par_string = get_cenario(cenario, sc);
-    cenario = par_string.first;
-    
-    if (cenario == "erro") {
-        cerr << "Erro: Informe valores entre 1 e 4!";
+        //Escolha do tipo de cenário
+        cout << "Escolha o tipo do cenário:" << endl;
+        cout << "1: correlated" << endl;
+        cout << "2: fully correlated" << endl;
+        cout << "3: not correlated" << endl;
+        cin >> tipo;
+
+        tipo = get_tipo(tipo);
+        if (tipo == "erro") {
+            cerr << "Erro: Informe valores entre 1 e 3!";
+            return 1;
+        }
+        
+        // TODO: Implementar a escolha do tamanho(300 até 1000) e do arquivo txt
+        cout << "Escolha o tamanho do problema em número de itens:" << endl;
+        cout << "1: 300" << endl;
+        cout << "2: 500" << endl;
+        cout << "3: 700" << endl;
+        cout << "4: 800" << endl;
+        cout << "5: 1000" << endl;
+        cin >> tamanho;
+
+        tamanho = get_tamanho(tamanho);
+        if (tamanho == "erro") {
+            cerr << "Erro: Informe valores entre 1 e 5!";
+            return 1;
+        }
+
+        cout << "Escolha o caso desejado de 1 a 10:" << endl;
+        cin >> caso;  
+    // Modo de seleção fixa
+    }
+    else if (case_select_mode == 1) {
+        cout << "Seleção automática de casos." << endl;
+        cenario = "scenario1";
+        sc = "sc1";
+        tipo = "correlated";
+        tamanho = "300";
+        caso = "1";
+    }
+    // Modo de seleção - Rodar todos os casos
+    else if(case_select_mode == 2) {
         return 1;
     }
-    sc = par_string.second;
-
-    //Escolha do tipo de cenário
-    cout << "Escolha o tipo do cenário:" << endl;
-    cout << "1: correlated" << endl;
-    cout << "2: fully correlated" << endl;
-    cout << "3: not correlated" << endl;
-    cin >> tipo;
-
-    tipo = get_tipo(tipo);
-    if (tipo == "erro") {
-        cerr << "Erro: Informe valores entre 1 e 3!";
-        return 1;
+    else {
+        cerr << "Erro: Modo de seleção inválido!" << endl;
+        return 1; // Retorna um código de erro indicando falha
     }
-    
-    // TODO: Implementar a escolha do tamanho(300 até 1000) e do arquivo txt
-    cout << "Escolha o tamanho do problema em número de itens:" << endl;
-    cout << "1: 300" << endl;
-    cout << "2: 500" << endl;
-    cout << "3: 700" << endl;
-    cout << "4: 800" << endl;
-    cout << "5: 1000" << endl;
-    cin >> tamanho;
-
-    tamanho = get_tamanho(tamanho);
-    if (tamanho == "erro") {
-        cerr << "Erro: Informe valores entre 1 e 5!";
-        return 1;
-    }
-
-    cout << "Escolha o caso desejado de 1 a 10:" << endl;
-    cin >> caso;
     
     #ifdef _WIN32
-        filepath = "instances\\" + cenario + "\\" + tipo + sc + "\\"+ tamanho+"\\kpfs_"+caso+".txt";
+        filepath = "instances\\" + cenario + "\\" + tipo + "_" + sc + "\\"+ tamanho+"\\kpfs_"+caso+".txt";
     #else
-        filepath = "instances/" + cenario + "/" + tipo + sc + "/"+tamanho+"/kpfs_"+caso+".txt";
+        filepath = "instances/" + cenario + "/" + tipo + "_" + sc + "/"+tamanho+"/kpfs_"+caso+".txt";
     #endif
     
     cout << filepath << endl;
@@ -415,22 +491,6 @@ int main(){
     cout << nP << endl;
     cout << kS << endl;
    
-    /*
-    for(const auto& item : items) {
-        std::cout << "ID: " << item.id << ", Peso: " << item.peso << ", Profit: " << item.profit << std::endl;
-    }
-
-   cout << "\n--- Conjuntos de Penalidade ---" << endl;
-    for(size_t i = 0; i < forfeit_sets.size(); ++i) {
-        cout << "Conjunto " << i << ": "
-             << "Permitidos (h): " << forfeit_sets[i].allowance << ", "
-             << "Custo (d): " << forfeit_sets[i].penalty_cost << ", "
-             << "Itens: { ";
-        for(size_t j = 0; j < forfeit_sets[i].items.size(); ++j) {
-            cout << forfeit_sets[i].items[j] << (j == forfeit_sets[i].items.size() - 1 ? "" : ", ");
-        }
-        cout << " }" << endl;
-    }*/
 
     // int max_iterations = 1000;
     // int tabu_tenure = 7; 
@@ -438,11 +498,12 @@ int main(){
     // tabu_search(items, forfeit_sets, kS, k_global, max_iterations, tabu_tenure);
 
 
-    // int population_size = 50;
-    // int max_generations = 100;
-    // double crossover_rate = 0.8;
-    // double mutation_rate = 0.05;
-    // genetic_algorithm(items, forfeit_sets, kS, k_global, population_size, max_generations, crossover_rate, mutation_rate);
+    int population_size = 1000;
+    int max_generations = 1000;
+    double crossover_rate = 0.8;
+    double mutation_rate = 0.05;
+    bool track_evolution = 0;
+    genetic_algorithm(items, forfeit_sets, kS, k_global, population_size, max_generations, crossover_rate, mutation_rate,track_evolution);
 
     return 0;
 }

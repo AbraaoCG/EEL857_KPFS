@@ -18,11 +18,11 @@ std::pair<std::string, std::string> get_cenario(std::string cenario, std::string
 
 std::string get_tipo(std::string tipo){
     if (tipo == "1") {
-        return {"correlated_"};
+        return {"correlated"};
     } else if (tipo == "2") {
-        return {"fully_correlated_"};
+        return {"fully_correlated"};
     } else if (tipo == "3") {
-        return {"not_correlated_"};
+        return {"not_correlated"};
     } else {
         return {"erro"};
     }
