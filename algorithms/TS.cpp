@@ -1,11 +1,9 @@
+#include "../utils/interpreter.hpp"
 #include <iostream>
 #include <vector>
 #include <chrono>
 #include <cfloat>
 #include <algorithm>
-#include "../utils/interpreter.hpp"
-
-
 
 
 double get_objective_value(const std::vector<bool>& sol, const Instance& inst) {

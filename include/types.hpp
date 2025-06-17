@@ -1,3 +1,5 @@
+#pragma once
+
 struct ForfeitSet {
     int nA;                     // Número de itens "permitidos"
     int forfeitCost;           // Penalidade caso exceda nA
