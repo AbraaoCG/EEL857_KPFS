@@ -3,4 +3,4 @@
 /test*.cpp
 /*.exe
 /*.out
-outputs/
+/outputs
