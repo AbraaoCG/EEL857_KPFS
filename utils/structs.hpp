@@ -1,4 +1,3 @@
-#include <vector>
 #pragma once
 
 struct ForfeitSet {

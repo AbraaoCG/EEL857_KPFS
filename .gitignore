@@ -2,5 +2,9 @@
 /.vscode
 /test*.cpp
 /*.exe
+<<<<<<< HEAD
 /*.out
 /outputs
+=======
+/outputs
+>>>>>>> e4813fbc3dec9ee9edaff393931619526fa59b79

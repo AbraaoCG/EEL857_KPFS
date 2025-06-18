@@ -11,7 +11,11 @@
 // #include "algorithms/ils.cpp"
 // #include "algorithms/vns.cpp"
 #include "algorithms/TS.cpp"
+<<<<<<< HEAD
 #include "algorithms/GA.cpp"
+=======
+// #include "algorithms/genetic.cpp"
+>>>>>>> e4813fbc3dec9ee9edaff393931619526fa59b79
 // #include "algorithms/simulated_annealing.cpp"
 
 namespace fs = std::filesystem;
