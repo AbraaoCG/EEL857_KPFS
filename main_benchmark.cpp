@@ -27,7 +27,12 @@ fs::path gerarCaminhoOutput(const fs::path& inputPath, const std::string& algori
 // Salva o resultado no arquivo correspondente
 void salvarResultado(const fs::path& caminho, const Resultado& res) {
     fs::create_directories(caminho.parent_path());
-    std::ofstream out(caminho);
+    std::ofstream out(caminho, std::ios_base::app);
+
+    // Adiciona um separador se o arquivo já tiver conteúdo, para melhor legibilidade
+    if (out.tellp() > 0) {
+        out << "\n----------------------------------------\n\n";
+    }
     out << "Lucro total: " << res.lucroTotal << "\n";
     out << "Penalidade total: " << res.penalidadeTotal << "\n";
     out << "Valor objetivo: " << res.valorObjetivo << "\n";
@@ -81,15 +86,16 @@ int main() {
 
         try {
             Instance inst = lerInstancia(caminhoInstancia.string());
+            fs::path caminhoOutput = gerarCaminhoOutput(caminhoInstancia, algoritmo);
+            fs::create_directories(caminhoOutput.parent_path());
 
             auto start = std::chrono::high_resolution_clock::now();
 
-            fs::path caminhoOutput = gerarCaminhoOutput(caminhoInstancia, algoritmo);
             Resultado res;
             if (algoritmo == "grasp") res = grasp(inst);
             // else if (algoritmo == "ils") res = ils(inst);
             // else if (algoritmo == "vns") res = vns(inst);
-            else if (algoritmo == "tabu") res = tabu_search(inst);
+            else if (algoritmo == "tabu") res = tabu_search(inst, caminhoOutput);
             // else if (algoritmo == "genetic") res = genetic(inst);
             // else if (algoritmo == "sa") res = simulatedAnnealing(inst);
 

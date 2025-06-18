@@ -1,41 +1,15 @@
 #include "../utils/interpreter.hpp"
+#include "../utils/functions.hpp"
 #include <iostream>
+#include <filesystem>
 #include <vector>
 #include <chrono>
 #include <cfloat>
 #include <algorithm>
+namespace fs = std::filesystem;
 
 
-double get_objective_value(const std::vector<bool>& sol, const Instance& inst) {
-    long long total_weight = 0;
-    int total_profit = 0;
 
-    for (int j = 0; j < inst.numItems; ++j) {
-        if (sol[j]) {
-            total_profit += inst.profits[j];
-            total_weight += inst.weights[j];
-        }
-    }
-
-    // Se o peso excede a capacidade, a solução é inviável.
-    if (total_weight > inst.capacity) {
-        return -DBL_MAX;
-    }
-
-    int total_penalty = 0;
-    for (const auto& fs : inst.forfeitSets) {
-        int count_in_set = 0;
-        for (int item_id : fs.items) {
-            if (sol[item_id]) {
-                count_in_set++;
-            }
-        }
-        int violations = std::max(0, count_in_set - fs.nA);
-        total_penalty += violations * fs.forfeitCost;
-    }
-
-    return static_cast<double>(total_profit - total_penalty);
-}
 
 /**
  * @brief Executa o algoritmo de Busca Tabu para o Problema da Mochila com Conjuntos de Penalidade.
@@ -44,7 +18,7 @@ double get_objective_value(const std::vector<bool>& sol, const Instance& inst) {
  * @param tabu_tenure A duração (em iterações) que um movimento permanecerá na lista tabu.
  * @return Um struct Resultado contendo a melhor solução encontrada e suas métricas.
  */
-Resultado tabu_search(const Instance& inst, int max_iter=1000, int tabu_tenure=7) {
+Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_iter=1000, int tabu_tenure=7) {
 
     // 1. Inicialização
     std::vector<bool> current_sol(inst.numItems, false);
@@ -53,6 +27,16 @@ Resultado tabu_search(const Instance& inst, int max_iter=1000, int tabu_tenure=7
 
     double best_obj_value = get_objective_value(best_sol, inst);
 
+    // <<< ALTERAÇÃO 1: O arquivo de log é aberto UMA VEZ, ANTES do loop.
+    std::ofstream log_file(caminho);
+    if (!log_file.is_open()) {
+        std::cerr << "Aviso: Nao foi possivel abrir o arquivo de log para escrita: " << caminho << std::endl;
+    } else {
+        log_file << "Iteracao;ValorObjetivo\n";
+    }
+
+
+    
     // 2. Loop Principal da Busca Tabu
     for (int iter = 0; iter < max_iter; ++iter) {
         std::vector<bool> best_neighbor_sol;
@@ -92,6 +76,10 @@ Resultado tabu_search(const Instance& inst, int max_iter=1000, int tabu_tenure=7
                 best_obj_value = best_neighbor_obj;
             }
         }
+
+        if (log_file.is_open()) {
+            log_file << iter + 1 << ";"  << best_obj_value << "\n";
+        }  
     }
 
     // 5. Finaliza e Prepara o Resultado
