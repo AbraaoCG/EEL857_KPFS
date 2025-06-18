@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <cfloat>
-#include "../utils/structs.hpp"
+#include "structs.hpp"
 
 double get_objective_value(const std::vector<bool>& sol, const Instance& inst) {
     long long total_weight = 0;
