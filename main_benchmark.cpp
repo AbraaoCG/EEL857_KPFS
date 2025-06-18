@@ -71,6 +71,12 @@ int main() {
         if (!entry.is_regular_file()) continue;
 
         fs::path caminhoInstancia = entry.path();
+        std::string nome = caminhoInstancia.filename().string();
+        if (nome == "readme.txt" || nome == ".DS_Store")
+            continue;
+
+        if (caminhoInstancia.extension() != ".txt")
+            continue;
         std::cout << "Processando: " << caminhoInstancia << "\n";
 
         try {
@@ -78,6 +84,7 @@ int main() {
 
             auto start = std::chrono::high_resolution_clock::now();
 
+            fs::path caminhoOutput = gerarCaminhoOutput(caminhoInstancia, algoritmo);
             Resultado res;
             if (algoritmo == "grasp") res = grasp(inst);
             // else if (algoritmo == "ils") res = ils(inst);
@@ -89,7 +96,7 @@ int main() {
             auto end = std::chrono::high_resolution_clock::now();
             res.tempoMs = std::chrono::duration<double, std::milli>(end - start).count();
 
-            fs::path caminhoOutput = gerarCaminhoOutput(caminhoInstancia, algoritmo);
+            
             salvarResultado(caminhoOutput, res);
         }
         catch (const std::exception& e) {
