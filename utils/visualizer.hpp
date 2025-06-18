@@ -14,8 +14,9 @@ void removeFile(const std::string& filePath) {
         // std::cout << "File removed successfully: " << filePath << std::endl;
     }
 }
+typedef pair<int,int> parValorPeso;
 
-void writeAndPlotExecution(const std::vector<std::vector<int>>& data, const std::string& filePath) {
+void writeAndPlotExecution(const vector<parValorPeso> data, const std::string& filePath) {
     // Abre o arquivo de script do Gnuplot
     std::ofstream gnuplotScript(filePath + ".gnuplot");
     cout << filePath + ".gnuplot" << endl;
@@ -46,7 +47,7 @@ void writeAndPlotExecution(const std::vector<std::vector<int>>& data, const std:
     }
     // Insere os dados da coluna Fitness
     for (size_t i = 0; i < data.size(); ++i) {
-        dataFile << i << " " << data[i][0] << " " << data[i][1] << "\n";
+        dataFile << i << " " << data[i].first << " " << data[i].second << "\n";
     }
     dataFile << "e\n";
     // Fecha o arquivo .txt

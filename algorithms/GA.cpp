@@ -7,46 +7,36 @@
 
 using namespace std;
 
-double calculate_objective(const vector<bool>& sol, const vector<Item>& items, const vector<ForfeitSet>& forfeit_sets, int knapsack_capacity, int max_global_violations) {
-    double total_profit = 0;
-    double total_weight = 0;
+double get_objective_value(const std::vector<bool>& sol, const Instance& inst) {
+    long long total_weight = 0;
+    int total_profit = 0;
 
-    for (size_t j = 0; j < items.size(); ++j) {
+    for (int j = 0; j < inst.numItems; ++j) {
         if (sol[j]) {
-            total_profit += items[j].profit;
-            total_weight += items[j].peso;
+            total_profit += inst.profits[j];
+            total_weight += inst.weights[j];
         }
     }
 
-    // 1. Restrição de capacidade da mochila 
-    if (total_weight > knapsack_capacity) {
-        return DBL_MIN; // Solução inviável
+    // Se o peso excede a capacidade, a solução é inviável.
+    if (total_weight > inst.capacity) {
+        return -DBL_MAX;
     }
-    double total_penalty_cost = 0;
-    int total_violations = 0;
 
-    for (const auto& fs : forfeit_sets) {
-        int items_in_set_count = 0;
+    int total_penalty = 0;
+    for (const auto& fs : inst.forfeitSets) {
+        int count_in_set = 0;
         for (int item_id : fs.items) {
             if (sol[item_id]) {
-                items_in_set_count++;
+                count_in_set++;
             }
         }
-        // Calcula as violações para o conjunto C_i 
-        int violations_v_i = max(0, items_in_set_count - fs.nA);
-        total_violations += violations_v_i;
-        total_penalty_cost += static_cast<double>(violations_v_i) * fs.forfeitCost;
+        int violations = std::max(0, count_in_set - fs.nA);
+        total_penalty += violations * fs.forfeitCost;
     }
 
-    // 2. Restrição de limite global de violações 
-    if (total_violations > max_global_violations) {
-        return DBL_MIN; // Solução inviável
-    }
-    
-    // Função Objetivo: Lucro - Penalidades 
-    return total_profit - total_penalty_cost;
+    return static_cast<double>(total_profit - total_penalty);
 }
-
 
 vector<bool> roulette_wheel_selection(const vector<vector<bool>>& population, 
                                       const vector<double>& fitness) {
@@ -70,6 +60,8 @@ vector<bool> roulette_wheel_selection(const vector<vector<bool>>& population,
 }
 
 
+typedef pair<int,int> parValorPeso;
+
 void genetic_algorithm(const vector<Item>& items,
                        const vector<ForfeitSet>& forfeit_sets,
                        int knapsack_capacity,
@@ -83,18 +75,23 @@ void genetic_algorithm(const vector<Item>& items,
                        std::string tipo,
                        std::string tamanho,
                        std::string caso,
-                       std::string sc) {
+                       std::string sc
+                       ) {
+    
     int n_items = items.size();
     vector<vector<bool>> population(population_size, vector<bool>(n_items));
     vector<double> fitness(population_size, DBL_MIN);
-    vector<vector<int>> generation_best_fitness_history(max_generations, vector<int>(2, -1000));
+    vector<parValorPeso> generation_best_fitness_history(max_generations, make_pair(-1000, -1000));
 
     // Inicializar população com soluções zeradas
     for (int i = 0; i < population_size; ++i){
         for (int j = 0; j < n_items; ++j){
             population[i][j] = 0;
         }
-        fitness[i] = calculate_objective(population[i], items, forfeit_sets, knapsack_capacity, max_global_violations);
+
+
+        // fitness[i] = calculate_objective(population[i], items, forfeit_sets, knapsack_capacity, max_global_violations);
+        fitness[i] = get_objective_value(const std::vector<bool>& sol, const Instance& inst)
     }
 
     // 2. Loop principal do algoritmo genético
@@ -158,8 +155,8 @@ void genetic_algorithm(const vector<Item>& items,
                     final_weight += items[i].peso;
                 }
             }
-            generation_best_fitness_history[generation][0] =  generation_best_fitness;
-            generation_best_fitness_history[generation][1] =  final_weight;
+            generation_best_fitness_history[generation].first =  generation_best_fitness;
+            generation_best_fitness_history[generation].second =  final_weight;
         }
     }
 

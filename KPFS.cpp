@@ -160,8 +160,8 @@ int main(){
     // tabu_search(items, forfeit_sets, kS, k_global, max_iterations, tabu_tenure);
 
 
-    int population_size = 200;
-    int max_generations = 5000;
+    int population_size = 20;
+    int max_generations = 1000;
     double crossover_rate = 0.8;
     double mutation_rate = 0.25;
     bool track_evolution = 1;
