@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include "../include/types.hpp"
+#include "../utils/structs.hpp"
 
 Instance lerInstancia(const std::string& caminho) {
     std::ifstream arq(caminho);
