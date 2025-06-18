@@ -28,7 +28,7 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
     double best_obj_value = get_objective_value(best_sol, inst);
     
     int iters_without_improvement = 0;
-    const int stopping_threshold = static_cast<int>(max_iter * 0.05);
+    const int stopping_threshold = static_cast<int>(max_iter * 0.2);
 
     // <<< ALTERAÇÃO 1: O arquivo de log é aberto UMA VEZ, ANTES do loop.
     std::ofstream log_file(caminho);
@@ -77,7 +77,12 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
             if (best_neighbor_obj > best_obj_value) {
                 best_sol = best_neighbor_sol;
                 best_obj_value = best_neighbor_obj;
+                iters_without_improvement = 0;
+            } else {
+                iters_without_improvement++;
             }
+        } else {
+            iters_without_improvement++;
         }
         int peso = 0;
         for (int k = 0; k < inst.numItems; ++k) {
@@ -87,7 +92,11 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
         }
         if (log_file.is_open()) {
             log_file << iter + 1 << ";"  << best_obj_value << ";" << peso <<"\n";
-        }  
+        }
+
+        if (iters_without_improvement >= stopping_threshold) {
+            break;
+        }
     }
 
     // 5. Finaliza e Prepara o Resultado
