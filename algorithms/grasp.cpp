@@ -1,29 +1,24 @@
 #include "../utils/interpreter.hpp"
+#include "../utils/functions.hpp"
 #include <algorithm>
 #include <random>
 #include <numeric>
 #include <chrono>
 
-int calcularPenalidade(const Instance& inst, const std::vector<bool>& selecionado) {
-    int total = 0;
-
-    for (const auto& fs : inst.forfeitSets) {
-        int count = 0;
-        for (int item : fs.items) {
-            if (selecionado[item]) count++;
-        }
-        if (count > fs.nA) total += fs.forfeitCost;
-    }
-
-    return total;
-}
-
-Resultado grasp(const Instance& inst, int maxIter = 2000, double alpha = 0.2) {
+Resultado grasp(const Instance& inst, int maxIter = 1000, double alpha = 0.2) {
     std::mt19937 rng(std::random_device{}());
     Resultado melhorSol;
     melhorSol.valorObjetivo = -1e9;
 
+    int limiteSemMelhora = std::max(1, maxIter / 10);
+    int semMelhora = 0;
+
     for (int it = 0; it < maxIter; ++it) {
+        if (semMelhora >= limiteSemMelhora) {
+            std::cout << "Criterio de parada ativado por estagnacao (sem melhora em " << semMelhora << " iteracoes consecutivas).\n";
+            break;
+        }
+
         // --- Fase de construção aleatorizada ---
         std::vector<bool> selecionado(inst.numItems, false);
         int pesoAtual = 0, lucroAtual = 0;
@@ -59,36 +54,91 @@ Resultado grasp(const Instance& inst, int maxIter = 2000, double alpha = 0.2) {
         bool melhorou = true;
         while (melhorou) {
             melhorou = false;
+            int objetivoAtual = get_objective_value(selecionado, inst);
+            int penalidadeAtual = lucroAtual - objetivoAtual;
+
+            // Tenta adicionar
             for (int i = 0; i < inst.numItems; ++i) {
                 if (!selecionado[i] && pesoAtual + inst.weights[i] <= inst.capacity) {
-                    // Tenta adicionar o item i
                     selecionado[i] = true;
+                    int novoObjetivo = get_objective_value(selecionado, inst);
                     int novoLucro = lucroAtual + inst.profits[i];
-                    int novaPenalidade = calcularPenalidade(inst, selecionado);
-                    int novoObjetivo = novoLucro - novaPenalidade;
+                    int novaPenalidade = novoLucro - novoObjetivo;
 
-                    int atualObjetivo = lucroAtual - calcularPenalidade(inst, selecionado);
-
-                    if (novoObjetivo > atualObjetivo) {
+                    if (novoObjetivo > objetivoAtual) {
                         pesoAtual += inst.weights[i];
                         lucroAtual = novoLucro;
                         melhorou = true;
+                        break;
                     } else {
-                        selecionado[i] = false; // Reverte
+                        selecionado[i] = false;
                     }
+                }
+            }
+
+            // Tenta remover
+            for (int i = 0; i < inst.numItems; ++i) {
+                if (selecionado[i]) {
+                    selecionado[i] = false;
+                    int novoObjetivo = get_objective_value(selecionado, inst);
+                    int novoLucro = lucroAtual - inst.profits[i];
+                    int novaPenalidade = novoLucro - novoObjetivo;
+
+                    if (novoObjetivo > objetivoAtual) {
+                        pesoAtual -= inst.weights[i];
+                        lucroAtual = novoLucro;
+                        melhorou = true;
+                        break;
+                    } else {
+                        selecionado[i] = true;
+                    }
+                }
+            }
+
+            // Tenta trocar
+            for (int i = 0; i < inst.numItems; ++i) {
+                if (!selecionado[i]) {
+                    for (int j = 0; j < inst.numItems; ++j) {
+                        if (selecionado[j]) {
+                            int novoPeso = pesoAtual - inst.weights[j] + inst.weights[i];
+                            if (novoPeso > inst.capacity) continue;
+
+                            selecionado[i] = true;
+                            selecionado[j] = false;
+
+                            int novoLucro = lucroAtual - inst.profits[j] + inst.profits[i];
+                            int novoObjetivo = get_objective_value(selecionado, inst);
+                            int novaPenalidade = novoLucro - novoObjetivo;
+
+                            if (novoObjetivo > objetivoAtual) {
+                                pesoAtual = novoPeso;
+                                lucroAtual = novoLucro;
+                                melhorou = true;
+                                break;
+                            } else {
+                                selecionado[i] = false;
+                                selecionado[j] = true;
+                            }
+                        }
+                    }
+                    if (melhorou) break;
                 }
             }
         }
 
         // Avalia a solução
-        int penalidade = calcularPenalidade(inst, selecionado);
-        int objetivo = lucroAtual - penalidade;
-
+        int objetivo = get_objective_value(selecionado, inst);
+        int penalidade = lucroAtual - objetivo;
+        
         if (objetivo > melhorSol.valorObjetivo) {
             melhorSol.itensSelecionados = selecionado;
             melhorSol.lucroTotal = lucroAtual;
-            melhorSol.penalidadeTotal = penalidade;
+            melhorSol.penalidadeTotal = objetivo - lucroAtual;
             melhorSol.valorObjetivo = objetivo;
+            semMelhora = 0;
+            std::cout << "Funcao-Objetivo melhor encontrada na iteracao " << it+1 << ": " << objetivo << " / Peso da mochila: " << pesoAtual << "/" << inst.capacity << "\n";
+        } else {
+            semMelhora++;
         }
     }
 
