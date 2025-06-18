@@ -1,13 +1,9 @@
-#include<iostream> 
-#include<fstream>
-#include <vector>
-#include <numeric>
-#include <algorithm>
-#include <cfloat> // Para DBL_MIN
-#include <cstdlib> // Para system()
-#include "filepath.h"
-#include "include/types.hpp"
 #include "algorithms/GA.cpp"
+#include "algorithms/grasp.cpp"
+#include "algorithms/TS.cpp"
+#include "utils/interpreter.hpp"
+#include <iostream>
+
 using namespace std;
 
 
@@ -25,13 +21,15 @@ int main(int argc, char* argv[]) {
         auto start = std::chrono::high_resolution_clock::now();
 
         Resultado res;
-        if (algoritmo == "grasp") res = grasp(inst);
+        if (algoritmo == "grasp") res = grasp(inst, caminho);
         // else if (algoritmo == "ils") res = ils(inst);
         // else if (algoritmo == "vns") res = vns(inst);
-        else if (algoritmo == "tabu") res = tabu_search(inst);
+        else if (algoritmo == "tabu") res = tabu_search(inst,caminho);
         // else if (algoritmo == "genetic") res = genetic(inst);
         // else if (algoritmo == "sa") res = simulatedAnnealing(inst);
-        else {
+        else if(algoritmo == "GA"){ res = genetic_algorithm(inst, caminho);
+
+        }else{
             std::cerr << "Algoritmo desconhecido.\n";
             return 1;
         }
