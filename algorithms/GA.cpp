@@ -1,7 +1,6 @@
 #include <vector>
 #include <numeric>
 #include <cfloat> // Para DBL_MIN
-#include "../utils/visualizer.hpp"
 #include "../utils/structs.hpp"
 #include <filesystem>
 #include "../utils/functions.hpp"
