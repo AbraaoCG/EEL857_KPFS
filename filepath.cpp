@@ -18,12 +18,28 @@ std::pair<std::string, std::string> get_cenario(std::string cenario, std::string
 
 std::string get_tipo(std::string tipo){
     if (tipo == "1") {
-        return {"correlated_"};
+        return {"correlated"};
     } else if (tipo == "2") {
-        return {"fully_correlated_"};
+        return {"fully_correlated"};
     } else if (tipo == "3") {
-        return {"not_correlated_"};
+        return {"not_correlated"};
     } else {
         return {"erro"};
+    }
+}
+
+std::string get_tamanho(std::string tamanho) {
+    if (tamanho == "1") {
+        return "300";
+    } else if (tamanho == "2") {
+        return "500";
+    } else if (tamanho == "3") {
+        return "700";
+    } else if (tamanho == "4") {
+        return "800";
+    } else if (tamanho == "5") {
+        return "1000";
+    } else {
+        return "erro"; // or any other appropriate error handling
     }
 }

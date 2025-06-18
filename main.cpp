@@ -1,6 +1,12 @@
+#include "algorithms/GA.cpp"
 #include "algorithms/grasp.cpp"
 #include "algorithms/TS.cpp"
+#include "utils/interpreter.hpp"
 #include <iostream>
+
+using namespace std;
+
+
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -15,13 +21,15 @@ int main(int argc, char* argv[]) {
         auto start = std::chrono::high_resolution_clock::now();
 
         Resultado res;
-        if (algoritmo == "grasp") res = grasp(inst);
+        if (algoritmo == "grasp") res = grasp(inst, caminho);
         // else if (algoritmo == "ils") res = ils(inst);
         // else if (algoritmo == "vns") res = vns(inst);
-        else if (algoritmo == "tabu") res = tabu_search(inst);
+        else if (algoritmo == "tabu") res = tabu_search(inst,caminho);
         // else if (algoritmo == "genetic") res = genetic(inst);
         // else if (algoritmo == "sa") res = simulatedAnnealing(inst);
-        else {
+        else if(algoritmo == "GA"){ res = genetic_algorithm(inst, caminho);
+
+        }else{
             std::cerr << "Algoritmo desconhecido.\n";
             return 1;
         }

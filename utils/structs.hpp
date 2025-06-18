@@ -1,3 +1,6 @@
+#include <vector>
+#pragma once
+
 struct ForfeitSet {
     int nA;                     // Número de itens "permitidos"
     int forfeitCost;           // Penalidade caso exceda nA
@@ -17,6 +20,7 @@ struct Instance {
 struct Resultado {
     std::vector<bool> itensSelecionados;
     int lucroTotal;
+    int pesoTotal;
     int penalidadeTotal;
     int valorObjetivo;
     double tempoMs;
