@@ -93,7 +93,7 @@ int main() {
             auto start = std::chrono::high_resolution_clock::now();
 
             Resultado res;
-            if (algoritmo == "grasp") res = grasp(inst);
+            if (algoritmo == "grasp") res = grasp(inst, caminhoOutput);
             // else if (algoritmo == "ils") res = ils(inst);
             // else if (algoritmo == "vns") res = vns(inst);
             else if (algoritmo == "tabu") res = tabu_search(inst, caminhoOutput);

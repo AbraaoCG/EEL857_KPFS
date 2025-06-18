@@ -1,17 +1,27 @@
 #include "../utils/interpreter.hpp"
 #include "../utils/functions.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <random>
 #include <numeric>
 #include <chrono>
+namespace fs = std::filesystem;
 
-Resultado grasp(const Instance& inst, int maxIter = 1000, double alpha = 0.2) {
+Resultado grasp(const Instance& inst, const fs::path& caminho, int maxIter = 1000, double alpha = 0.2) {
     std::mt19937 rng(std::random_device{}());
     Resultado melhorSol;
     melhorSol.valorObjetivo = -1e9;
 
     int limiteSemMelhora = std::max(1, maxIter / 10);
     int semMelhora = 0;
+
+    // <<< ALTERAÇÃO 1: O arquivo de log é aberto UMA VEZ, ANTES do loop.
+    std::ofstream log_file(caminho);
+    if (!log_file.is_open()) {
+        std::cerr << "Aviso: Nao foi possivel abrir o arquivo de log para escrita: " << caminho << std::endl;
+    } else {
+        log_file << "Iteracao;ValorObjetivo\n";
+    }
 
     for (int it = 0; it < maxIter; ++it) {
         if (semMelhora >= limiteSemMelhora) {
@@ -129,12 +139,17 @@ Resultado grasp(const Instance& inst, int maxIter = 1000, double alpha = 0.2) {
         // Avalia a solução
         int objetivo = get_objective_value(selecionado, inst);
         int penalidade = lucroAtual - objetivo;
+
+        if (log_file.is_open()) {
+            log_file << it + 1 << ";"  << objetivo << ";" << pesoAtual << "\n";
+        }  
         
         if (objetivo > melhorSol.valorObjetivo) {
             melhorSol.itensSelecionados = selecionado;
             melhorSol.lucroTotal = lucroAtual;
             melhorSol.penalidadeTotal = objetivo - lucroAtual;
             melhorSol.valorObjetivo = objetivo;
+            melhorSol.pesoTotal = pesoAtual;
             semMelhora = 0;
             std::cout << "Funcao-Objetivo melhor encontrada na iteracao " << it+1 << ": " << objetivo << " / Peso da mochila: " << pesoAtual << "/" << inst.capacity << "\n";
         } else {
