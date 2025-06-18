@@ -25,7 +25,7 @@ fs::path gerarCaminhoOutput(const fs::path& inputPath, const std::string& algori
 }
 
 // Salva o resultado no arquivo correspondente
-void salvarResultado(const fs::path& caminho, const Resultado& res) {
+void salvarResultado(const fs::path& caminho, const Resultado& res, const Instance& inst) {
     fs::create_directories(caminho.parent_path());
     std::ofstream out(caminho, std::ios_base::app);
 
@@ -36,6 +36,7 @@ void salvarResultado(const fs::path& caminho, const Resultado& res) {
     out << "Lucro total: " << res.lucroTotal << "\n";
     out << "Penalidade total: " << res.penalidadeTotal << "\n";
     out << "Valor objetivo: " << res.valorObjetivo << "\n";
+    out << "Peso na Mochila:" << res.pesoTotal << "/" << inst.capacity <<"\n";
     out << "Tempo (ms): " << res.tempoMs << "\n";
     out << "Itens selecionados (por índice):\n";
     for (size_t i = 0; i < res.itensSelecionados.size(); ++i) {
@@ -103,7 +104,7 @@ int main() {
             res.tempoMs = std::chrono::duration<double, std::milli>(end - start).count();
 
             
-            salvarResultado(caminhoOutput, res);
+            salvarResultado(caminhoOutput, res, inst);
         }
         catch (const std::exception& e) {
             std::cerr << "Erro ao processar " << caminhoInstancia << ": " << e.what() << "\n";

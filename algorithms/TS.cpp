@@ -26,13 +26,16 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
     std::vector<int> tabu_list(inst.numItems, 0);
 
     double best_obj_value = get_objective_value(best_sol, inst);
+    
+    int iters_without_improvement = 0;
+    const int stopping_threshold = static_cast<int>(max_iter * 0.05);
 
     // <<< ALTERAÇÃO 1: O arquivo de log é aberto UMA VEZ, ANTES do loop.
     std::ofstream log_file(caminho);
     if (!log_file.is_open()) {
         std::cerr << "Aviso: Nao foi possivel abrir o arquivo de log para escrita: " << caminho << std::endl;
     } else {
-        log_file << "Iteracao;ValorObjetivo\n";
+        log_file << "Iteracao;ValorObjetivo;Peso\n";
     }
 
 
@@ -76,9 +79,14 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
                 best_obj_value = best_neighbor_obj;
             }
         }
-
+        int peso = 0;
+        for (int k = 0; k < inst.numItems; ++k) {
+            if (best_sol[k]){
+                peso += inst.weights[k];
+            }
+        }
         if (log_file.is_open()) {
-            log_file << iter + 1 << ";"  << best_obj_value << "\n";
+            log_file << iter + 1 << ";"  << best_obj_value << ";" << peso <<"\n";
         }  
     }
 
@@ -90,9 +98,11 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
 
     // Calcula as métricas finais da melhor solução para preencher o struct Resultado
     int final_lucro = 0;
+    int final_peso = 0;
     for (int j = 0; j < inst.numItems; ++j) {
         if (best_sol[j]) {
             final_lucro += inst.profits[j];
+            final_peso += inst.weights[j];
         }
     }
 
@@ -109,6 +119,7 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
     }
     
     resultado.lucroTotal = final_lucro;
+    resultado.pesoTotal = final_peso;
     resultado.penalidadeTotal = final_penalidade;
     resultado.valorObjetivo = final_lucro - final_penalidade;
 
