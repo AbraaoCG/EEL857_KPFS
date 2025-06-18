@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cfloat>
 #include <algorithm>
+#include <omp.h>
 namespace fs = std::filesystem;
 
 
@@ -26,6 +27,7 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
     std::vector<int> tabu_list(inst.numItems, 0);
 
     double best_obj_value = get_objective_value(best_sol, inst);
+    double current_obj_value = best_obj_value;
     
     int iters_without_improvement = 0;
     const int stopping_threshold = static_cast<int>(max_iter * 0.2);
@@ -42,40 +44,60 @@ Resultado tabu_search(const Instance& inst, const fs::path& caminho, int max_ite
     
     // 2. Loop Principal da Busca Tabu
     for (int iter = 0; iter < max_iter; ++iter) {
-        std::vector<bool> best_neighbor_sol;
-        double best_neighbor_obj = -DBL_MAX;
+        // --- PARALELIZAÇÃO COM OPENMP ---
         int best_move = -1;
+        double best_neighbor_obj = -DBL_MAX;
 
-        // 3. Busca na Vizinhança (movimentos 1-flip)
-        for (int j = 0; j < inst.numItems; ++j) {
-            std::vector<bool> neighbor_sol = current_sol;
-            neighbor_sol[j] = !neighbor_sol[j]; // Gera o vizinho
+        #pragma omp parallel
+        {
+            int local_best_move = -1;
+            double local_best_obj = -DBL_MAX;
 
-            double neighbor_obj = get_objective_value(neighbor_sol, inst);
-            if (neighbor_obj == -DBL_MAX) continue; // Pula vizinhos inviáveis
+            // O laço 'for' é dividido entre as threads
+            #pragma omp for nowait
+            for (int j = 0; j < inst.numItems; ++j) {
+                std::vector<bool> neighbor_sol = current_sol;
+                neighbor_sol[j] = !neighbor_sol[j];
+                double neighbor_obj = get_objective_value(neighbor_sol, inst);
+                if (neighbor_obj == -DBL_MAX) continue;
 
-            if (iter >= tabu_list[j]) { // Movimento não é tabu
-                if (neighbor_obj > best_neighbor_obj) {
-                    best_neighbor_obj = neighbor_obj;
-                    best_neighbor_sol = neighbor_sol;
-                    best_move = j;
+                if (iter >= tabu_list[j]) { // Não é tabu
+                    if (neighbor_obj > local_best_obj) {
+                        local_best_obj = neighbor_obj;
+                        local_best_move = j;
+                    }
+                } else { // É tabu -> Critério de Aspiração
+                    if (neighbor_obj > best_obj_value) {
+                        // Se um movimento aspirado for encontrado, ele tem alta prioridade
+                        #pragma omp critical
+                        {
+                            if (neighbor_obj > best_neighbor_obj) {
+                                best_neighbor_obj = neighbor_obj;
+                                best_move = j;
+                            }
+                        }
+                    }
                 }
-            } else { // Critério de Aspiração
-                if (neighbor_obj > best_obj_value) {
-                    best_neighbor_obj = neighbor_obj;
-                    best_neighbor_sol = neighbor_sol;
-                    best_move = j;
+            }
+
+            // Cada thread compara seu melhor resultado com o melhor global (entre as threads)
+            #pragma omp critical
+            {
+                if (local_best_obj > best_neighbor_obj) {
+                    best_neighbor_obj = local_best_obj;
+                    best_move = local_best_move;
                 }
             }
         }
 
         // 4. Atualiza a solução
         if (best_move != -1) {
-            current_sol = best_neighbor_sol;
+            current_obj_value = best_neighbor_obj;
+            current_sol[best_move] = !current_sol[best_move];
             tabu_list[best_move] = iter + tabu_tenure;
 
-            if (best_neighbor_obj > best_obj_value) {
-                best_sol = best_neighbor_sol;
+            if (current_obj_value > best_obj_value) {
+                best_sol = current_sol;
                 best_obj_value = best_neighbor_obj;
                 iters_without_improvement = 0;
             } else {
