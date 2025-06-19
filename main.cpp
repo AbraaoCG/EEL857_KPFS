@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string algoritmo = "GA";
+    std::string algoritmo = "genetic";
     std::string caminho = argv[1];
     try {
         Instance inst = lerInstancia(caminho);
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
         // else if (algoritmo == "ils") res = ils(inst);
         // else if (algoritmo == "vns") res = vns(inst);
         else if (algoritmo == "tabu") res = tabu_search(inst, caminhoOutput);
-        else if(algoritmo == "GA") res = genetic_algorithm(inst, caminhoOutput);
+        else if(algoritmo == "genetic") res = genetic_algorithm(inst, caminhoOutput);
         // else if (algoritmo == "sa") res = simulatedAnnealing(inst);
         else {
             std::cerr << "Algoritmo desconhecido.\n";
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
         auto end = std::chrono::high_resolution_clock::now();
         res.tempoMs = std::chrono::duration<double, std::milli>(end - start).count();
         salvarResultado(caminhoOutput, res, inst);
-        
+
         std::cout << "Lucro: " << res.lucroTotal
                 << ", Penalidade: " << res.penalidadeTotal
                 << ", Objetivo: " << res.valorObjetivo
