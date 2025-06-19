@@ -1,6 +1,7 @@
 #include "algorithms/grasp.cpp"
 #include "algorithms/TS.cpp"
 #include "algorithms/GA.cpp"
+#include "algorithms/VNS.cpp"
 #include <iostream>
 // Gera o caminho correspondente em "outputs/"
 fs::path gerarCaminhoOutput(const fs::path& inputPath, const std::string& algoritmo) {
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string algoritmo = "genetic";
+    std::string algoritmo = "vns";
     std::string caminho = argv[1];
     try {
         Instance inst = lerInstancia(caminho);
@@ -49,7 +50,7 @@ int main(int argc, char* argv[]) {
         Resultado res;
         if (algoritmo == "grasp") res = grasp(inst, caminhoOutput);
         // else if (algoritmo == "ils") res = ils(inst);
-        // else if (algoritmo == "vns") res = vns(inst);
+        else if (algoritmo == "vns") res = vns(inst, caminhoOutput);
         else if (algoritmo == "tabu") res = tabu_search(inst, caminhoOutput);
         else if(algoritmo == "genetic") res = genetic_algorithm(inst, caminhoOutput);
         // else if (algoritmo == "sa") res = simulatedAnnealing(inst);
