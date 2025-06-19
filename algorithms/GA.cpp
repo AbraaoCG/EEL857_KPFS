@@ -61,7 +61,7 @@ double calculate_objective(const vector<bool>& sol,const Instance &inst  ) {
 
     // 1. Restrição de capacidade da mochila 
     if (total_weight > inst.capacity) {
-        return -DBL_MAX; // Solução inviável
+        return DBL_MIN; // Solução inviável
     }
     double total_penalty_cost = 0;
     int total_violations = 0;
@@ -189,7 +189,8 @@ Resultado genetic_algorithm_parallel(const Instance &inst,
             // Caso valor objetivo seja diferente de 0
             if (melhorSol.valorObjetivo != 0) {
                 // calcula uma melhora percentual do valor objetivo
-                melhoraNaFuncaoObjetivo = (melhorSol.valorObjetivo - ultimaSolOtima) / melhorSol.valorObjetivo;
+                double tmp1 =(melhorSol.valorObjetivo - ultimaSolOtima);
+                melhoraNaFuncaoObjetivo = tmp1 / (melhorSol.valorObjetivo);
             } else {
                 // Caso seja 0, apenas considere que o algorítimo deve continuar 
                 melhoraNaFuncaoObjetivo = threshold * 1.1;
@@ -338,7 +339,7 @@ Resultado genetic_algorithm_default(const Instance &inst,
                 // Caso a melhor solução
                 melhoraNaFuncaoObjetivo = threshold * 1.1;
             }
-
+            
             if (melhoraNaFuncaoObjetivo > threshold) {
                 ultimaGeracaoDeMelhora = generation;
             }
@@ -376,12 +377,12 @@ Resultado genetic_algorithm_default(const Instance &inst,
 Resultado genetic_algorithm(const Instance &inst, 
     const fs::path &caminho, 
     int population_size = 500, 
-    int max_generations = 5000, // Numero máximo de gerações. Também impacta o critério de parada por estagnação
+    int max_generations = 3000, // Numero máximo de gerações. Também impacta o critério de parada por estagnação
     double crossover_rate = 0.9, // Taxa de Crossover entre pais. Caso não haja crossover, um ou dois pais vão para próxima geração.
-    double mutation_rate = 0.15, // Taxa de mutação aleatória.
+    double mutation_rate = 0.35, // Taxa de mutação aleatória.
     double maxGenEstagnated = 0.2, // Valor % do máximo de gerações estagnadas para parar o algorítmo.
-    double threshold = 0.001, // Valor de diferença % para se considerar estagnação
-    bool verbose = 0) {
+    double threshold = 0.005, // Valor de diferença % para se considerar estagnação
+    bool verbose = 1) {
         
         int mode = 0;
 
