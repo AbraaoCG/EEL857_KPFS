@@ -64,7 +64,8 @@ Resultado grasp(const Instance& inst, const fs::path& caminho, int maxIter = 100
                 while (melhorou) {
                     melhorou = false;
                     int objetivoAtual = get_objective_value(selecionado, inst);
-
+                    
+                    // Melhoria por adição
                     for (int i = 0; i < inst.numItems; ++i) {
                         if (!selecionado[i] && pesoAtual + inst.weights[i] <= inst.capacity) {
                             selecionado[i] = true;
@@ -80,6 +81,7 @@ Resultado grasp(const Instance& inst, const fs::path& caminho, int maxIter = 100
                         }
                     }
 
+                    // Melhoria por remoção
                     for (int i = 0; i < inst.numItems; ++i) {
                         if (selecionado[i]) {
                             selecionado[i] = false;
@@ -95,6 +97,7 @@ Resultado grasp(const Instance& inst, const fs::path& caminho, int maxIter = 100
                         }
                     }
 
+                    // Melhoria por troca
                     for (int i = 0; i < inst.numItems; ++i) {
                         if (!selecionado[i]) {
                             for (int j = 0; j < inst.numItems; ++j) {
