@@ -52,3 +52,17 @@ double get_objective_value(const std::vector<bool>& sol, const Instance& inst) {
 
     return static_cast<double>(total_profit - total_penalty);
 }
+
+// Função auxiliar para cálculo do peso.
+int calcularPeso(const Instance &inst, const std::vector<bool> &best_sol) {
+    int final_weight = 0;
+    int items_count = 0;
+
+    for (size_t i = 0; i < best_sol.size(); ++i) {
+        if (best_sol[i]) {
+            final_weight += inst.weights[i];
+            items_count++;
+        }
+    }
+    return final_weight;
+}

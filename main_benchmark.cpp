@@ -9,7 +9,7 @@
 #include "utils/interpreter.hpp"
 #include "algorithms/grasp.cpp"
 // #include "algorithms/ils.cpp"
-// #include "algorithms/vns.cpp"
+#include "algorithms/VNS.cpp"
 #include "algorithms/TS.cpp"
 #include "algorithms/GA.cpp"
 // #include "algorithms/simulated_annealing.cpp"
@@ -51,7 +51,7 @@ int main() {
     std::cout << "Selecione o algoritmo:\n";
     std::cout << "1 - GRASP\n";
     // std::cout << "2 - ILS\n";
-    // std::cout << "3 - VNS\n";
+    std::cout << "3 - VNS\n";
     std::cout << "4 - Tabu Search\n";
     std::cout << "5 - Genetic Algorithm\n";
     // std::cout << "6 - Simulated Annealing\n";
@@ -95,7 +95,7 @@ int main() {
             Resultado res;
             if (algoritmo == "grasp") res = grasp(inst, caminhoOutput);
             // else if (algoritmo == "ils") res = ils(inst);
-            // else if (algoritmo == "vns") res = vns(inst);
+            else if (algoritmo == "vns") res = vns(inst,caminhoOutput);
             else if (algoritmo == "tabu") res = tabu_search(inst, caminhoOutput);
             else if (algoritmo == "genetic") res = genetic_algorithm(inst,caminhoOutput);
             // else if (algoritmo == "sa") res = simulatedAnnealing(inst);

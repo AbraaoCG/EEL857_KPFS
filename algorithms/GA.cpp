@@ -10,45 +10,11 @@ namespace fs = std::filesystem;
 using namespace std;
 
 
-
-// Função para seleção de parentes com método da roleta. (Indivíduos com maior fitness/Valor na mochila tem mais chance de serem escolhidos).
-vector<bool> roulette_wheel_selection(const vector<vector<bool>> &population, const vector<double> &fitness) {
-    double total_fitness = accumulate(fitness.begin(), fitness.end(), 0.0);
-    double random_value = ((double)rand() / RAND_MAX) * total_fitness;
-    double cumulative_sum = 0.0;
-
-    for (size_t i = 0; i < population.size(); ++i) {
-        cumulative_sum += fitness[i];
-        if (cumulative_sum >= random_value) {
-            return population[i];
-        }
-    }
-    return population.back();
-}
-
-// Função auxiliar para cálculo do peso.
-int calcularPeso(const Instance &inst, const vector<bool> &best_sol) {
-    double final_weight = 0;
-    int items_count = 0;
-
-    for (size_t i = 0; i < best_sol.size(); ++i) {
-        if (best_sol[i]) {
-            final_weight += inst.weights[i];
-            items_count++;
-        }
-    }
-    return final_weight;
-}
-
 // Função para cálculo da função objetivo. Difere da função definida em 'utils.hpp',
 // pois ao invés de retornar fitness o menor possível(-DBL_MAX) para um candidato que extrapola
 // o peso da mochila, retorna fitness próximo de 0.(DBL_MIN).
 
-// Essa decisão de implementação foi tomada de forma experimental, pois observa-se que penalizar 
-// grandemente candidatos com alto valor na mochila, mas que extrapolavam o peso, tornava
-// dificil para esses serem selecionados como pais. Como consequencia, alguns candidatos com potencial
-// para gerarem filhos com soluções ótimas eram 'descartados'.
-double calculate_objective(const vector<bool>& sol,const Instance &inst  ) {
+double calculate_objective_dbl_min(const std::vector<bool>& sol,const Instance &inst  ) {
     double total_profit = 0;
     double total_weight = 0;
 
@@ -74,7 +40,7 @@ double calculate_objective(const vector<bool>& sol,const Instance &inst  ) {
             }
         }
         // Calcula as violações para o conjunto C_i 
-        int violations_v_i = max(0, items_in_set_count - fs.nA);
+        int violations_v_i = std::max(0, items_in_set_count - fs.nA);
         total_violations += violations_v_i;
         total_penalty_cost += static_cast<double>(violations_v_i) * fs.forfeitCost;
     }
@@ -84,6 +50,20 @@ double calculate_objective(const vector<bool>& sol,const Instance &inst  ) {
 }
 
 
+// Função para seleção de parentes com método da roleta. (Indivíduos com maior fitness/Valor na mochila tem mais chance de serem escolhidos).
+vector<bool> roulette_wheel_selection(const vector<vector<bool>> &population, const vector<double> &fitness) {
+    double total_fitness = accumulate(fitness.begin(), fitness.end(), 0.0);
+    double random_value = ((double)rand() / RAND_MAX) * total_fitness;
+    double cumulative_sum = 0.0;
+
+    for (size_t i = 0; i < population.size(); ++i) {
+        cumulative_sum += fitness[i];
+        if (cumulative_sum >= random_value) {
+            return population[i];
+        }
+    }
+    return population.back();
+}
 
 Resultado genetic_algorithm(const Instance &inst, 
     const fs::path &caminho, 
@@ -112,7 +92,7 @@ Resultado genetic_algorithm(const Instance &inst,
         for (int j = 0; j < n_items; ++j) {
             population[i][j] = 0;
         }
-        fitness[i] = calculate_objective(population[i], inst);
+        fitness[i] = calculate_objective_dbl_min(population[i], inst);
     }
 
     // Abrir arquivo para escrita de resultado.
@@ -162,7 +142,7 @@ Resultado genetic_algorithm(const Instance &inst,
         // 2.41 Avaliação da nova população: Cálculo de fitness (paralelizado)
         #pragma omp parallel for
         for (int i = 0; i < population_size; ++i) {
-            fitness[i] = calculate_objective(new_population[i], inst);
+            fitness[i] = calculate_objective_dbl_min(new_population[i], inst);
         }
 
         // 2.42 Depois do loop em paralelo, fazer a busca da melhor solução sequencialmente.
