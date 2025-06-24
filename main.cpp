@@ -38,7 +38,25 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string algoritmo = "vns";
+    std::string algoritmo;
+    std::cout << "Selecione o algoritmo:\n";
+    std::cout << "1 - GRASP\n";
+    std::cout << "2 - VNS\n";
+    std::cout << "3 - Tabu Search\n";
+    std::cout << "4 - Genetic Algorithm\n";
+    std::cout << ">> ";
+    int opcao;
+    std::cin >> opcao;
+
+    switch (opcao) {
+        case 1: algoritmo = "grasp"; break;
+        case 2: algoritmo = "vns"; break;
+        case 3: algoritmo = "tabu"; break;
+        case 4: algoritmo = "genetic"; break;
+        default:
+            std::cerr << "Opção inválida.\n";
+            return 1;
+    }
     std::string caminho = argv[1];
     try {
         Instance inst = lerInstancia(caminho);
@@ -49,11 +67,9 @@ int main(int argc, char* argv[]) {
 
         Resultado res;
         if (algoritmo == "grasp") res = grasp(inst, caminhoOutput);
-        // else if (algoritmo == "ils") res = ils(inst);
         else if (algoritmo == "vns") res = vns(inst, caminhoOutput);
         else if (algoritmo == "tabu") res = tabu_search(inst, caminhoOutput);
         else if(algoritmo == "genetic") res = genetic_algorithm(inst, caminhoOutput);
-        // else if (algoritmo == "sa") res = simulatedAnnealing(inst);
         else {
             std::cerr << "Algoritmo desconhecido.\n";
             return 1;
